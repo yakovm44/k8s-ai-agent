@@ -116,6 +116,76 @@ def get_unhealthy_pods():
         "unhealthy_count": len(unhealthy),
         "pods": unhealthy
     }
+ @app.get("/health/pods")
+def check_pods_health():
+
+    v1 = get_k8s_client()
+
+    pods = v1.list_pod_for_all_namespaces()
+
+    problems = []
+    healthy = 0
+
+    for pod in pods.items:
+
+        pod_problems = []
+
+        # Check pod phase
+        if pod.status.phase != "Running":
+            pod_problems.append(
+                f"Pod phase is {pod.status.phase}"
+            )
+
+        # Check containers
+        for container in pod.status.container_statuses or []:
+
+            if not container.ready:
+                reason = "container is not ready"
+
+                if container.state.waiting:
+                    reason = (
+                        container.state.waiting.reason
+                        or "container is waiting"
+                    )
+
+                pod_problems.append(
+                    f"{container.name}: {reason}"
+                )
+
+            # Too many restarts
+            if container.restart_count > 5:
+                pod_problems.append(
+                    f"{container.name}: "
+                    f"{container.restart_count} restarts"
+                )
+
+        if pod_problems:
+
+            problems.append({
+                "namespace": pod.metadata.namespace,
+                "pod": pod.metadata.name,
+                "node": pod.spec.node_name,
+                "problems": pod_problems
+            })
+
+        else:
+            healthy += 1
+
+    total = len(pods.items)
+    unhealthy = len(problems)
+
+    status = "OK"
+
+    if unhealthy > 0:
+        status = "WARNING"
+
+    return {
+        "status": status,
+        "total_pods": total,
+        "healthy": healthy,
+        "unhealthy": unhealthy,
+        "problems": problems
+    }   
 PY
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
