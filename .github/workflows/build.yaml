@@ -36,8 +36,8 @@ jobs:
           
           # Clone repository using HTTPS URL without token
           git clone https://github.com/yakovm44/argocd.git gitops
-          cd gitops/apps/thekeeper
-          sed -i '' "s|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" deployment.yaml
+          cd gitops/apps/${{ github.repository }}
+          sed -i '' "s|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" deploy.yaml
           
           # Commit changes
           git config --global user.name "GitHub Actions"
