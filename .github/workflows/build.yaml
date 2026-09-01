@@ -44,6 +44,7 @@ jobs:
           git clone https://github.com/yakovm44/argocd.git gitops
           cd gitops/apps/${{ env.REPO_NAME }}/dev/agent-ai
 
+
           sed -i '' "s|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" deploy.yaml
           
           # Commit changes
