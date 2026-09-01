@@ -26,17 +26,24 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+      - name: Extract repository name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
+      - name: Use the repository name
+        run: echo "The repository name is ${{ env.REPO_NAME }}"      
       - name: Update GitOps repository
         shell: bash
         env:
           GIT_TOKEN: ${{ secrets.GITOPS_PAT }}
         run: |
           # Remove any existing gitops directory
+          
           rm -rf gitops
           
           # Clone repository using HTTPS URL without token
           git clone https://github.com/yakovm44/argocd.git gitops
-          cd gitops/apps/${{ github.repository }}
+          cd gitops/apps/${{ env.REPO_NAME }}
+          
           sed -i '' "s|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" deploy.yaml
           
           # Commit changes
